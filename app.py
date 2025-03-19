@@ -24,6 +24,7 @@ df['Fiscal_Week_Id'] = pd.to_datetime(df['Fiscal_Week_Id'], errors='coerce')
 
 # Streamlit App Setup
 st.title("📊 Price Optimization Analysis Dashboard")
+st.markdown("### An interactive tool for analyzing pricing strategies and competition.")
 
 # Sidebar Filters
 store_filter = st.sidebar.selectbox("Select Store:", options=["All"] + list(df['Store_Id'].unique()))
@@ -38,7 +39,7 @@ if item_filter != "All":
 
 # Price Elasticity of Demand
 st.subheader("Price Elasticity of Demand")
-fig = px.scatter(filtered_df, x='Price', y='Item_Quantity', title='Price vs. Item Quantity', hover_data=['Sales_Amount'])
+fig = px.scatter(filtered_df, x='Price', y='Item_Quantity', title='Price vs. Item Quantity', color='Price', hover_data=['Sales_Amount'])
 st.plotly_chart(fig)
 
 # Revenue Heatmap
@@ -50,13 +51,14 @@ st.pyplot(fig)
 
 # Sales and Competition Price Comparison
 st.subheader("Sales vs. Competition Price")
-fig = px.line(filtered_df, x='Fiscal_Week_Id', y=['Sales_Amount', 'Competition_Price'], title='Sales vs. Competitor Price', hover_data=['Price'])
+filtered_df['Competition_Price'].fillna(filtered_df['Competition_Price'].median(), inplace=True)
+fig = px.line(filtered_df, x='Fiscal_Week_Id', y=['Sales_Amount', 'Competition_Price'], title='Sales vs. Competitor Price', color_discrete_map={'Sales_Amount':'blue', 'Competition_Price':'red'}, hover_data=['Price'])
 st.plotly_chart(fig)
 
 # Profitability Analysis
 filtered_df['Profit'] = filtered_df['Sales_Amount'] - (filtered_df['Item_Quantity'] * filtered_df['Price'])
 st.subheader("Profitability Over Time")
-fig = px.line(filtered_df, x='Fiscal_Week_Id', y='Profit', title='Profit Over Time', hover_data=['Sales_Amount'])
+fig = px.line(filtered_df, x='Fiscal_Week_Id', y='Profit', title='Profit Over Time', color_discrete_sequence=['green'], hover_data=['Sales_Amount'])
 st.plotly_chart(fig)
 
 # Advanced Forecasted Sales (Polynomial Regression Prediction)
@@ -70,22 +72,22 @@ filtered_df['Week_Num'] = filtered_df['Week_Num'].astype(int)
 X = filtered_df[['Week_Num']]
 y = filtered_df['Sales_Amount']
 
-poly_model = make_pipeline(PolynomialFeatures(degree=2), LinearRegression())
+poly_model = make_pipeline(PolynomialFeatures(degree=3), LinearRegression())
 poly_model.fit(X, y)
 filtered_df['Predicted_Sales'] = poly_model.predict(X)
 
-fig = px.line(filtered_df, x='Fiscal_Week_Id', y=['Sales_Amount', 'Predicted_Sales'], title='Actual vs. Predicted Sales', hover_data=['Price'])
+fig = px.line(filtered_df, x='Fiscal_Week_Id', y=['Sales_Amount', 'Predicted_Sales'], title='Actual vs. Predicted Sales', color_discrete_map={'Sales_Amount':'blue', 'Predicted_Sales':'orange'}, hover_data=['Price'])
 st.plotly_chart(fig)
 
-# Original Visualizations
+# Enhanced Visualizations
 st.subheader("Price vs. Sales Amount")
-fig = px.scatter(filtered_df, x='Price', y='Sales_Amount', title='Price vs. Sales Amount', hover_data=['Item_Quantity'])
+fig = px.scatter(filtered_df, x='Price', y='Sales_Amount', title='Price vs. Sales Amount', color='Sales_Amount', hover_data=['Item_Quantity'])
 st.plotly_chart(fig)
 
 st.subheader("Our Price vs. Competitor Price Distribution")
-fig = px.histogram(filtered_df, x=['Price', 'Competition_Price'], title='Our Price vs. Competitor Price Distribution', barmode='overlay', histnorm='percent')
+fig = px.histogram(filtered_df, x=['Price', 'Competition_Price'], title='Our Price vs. Competitor Price Distribution', barmode='overlay', histnorm='percent', color_discrete_sequence=['blue', 'red'])
 st.plotly_chart(fig)
 
 st.subheader("Sales Trend Over Time")
-fig = px.line(filtered_df, x='Fiscal_Week_Id', y='Sales_Amount', title='Sales Trend Over Time', hover_data=['Price'])
+fig = px.line(filtered_df, x='Fiscal_Week_Id', y='Sales_Amount', title='Sales Trend Over Time', color_discrete_sequence=['purple'], hover_data=['Price'])
 st.plotly_chart(fig)
